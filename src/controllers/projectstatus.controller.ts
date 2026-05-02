@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import * as service from "../services/projectStatus.service";
+import * as service from "../services/projectstatus.service";
 
 export const createStatus = async (req: FastifyRequest, reply: FastifyReply) => {
   const result = await service.createStatus(req.body);
