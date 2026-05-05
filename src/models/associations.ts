@@ -4,6 +4,8 @@ import ProjectStatus from "./projectstatus.model";
 import TaskStatus from "./taskstatus.model";
 import User from "./user.model";
 import UserProfile from "./userProfile.model";
+import TaskAssignee from "./taskassignee.model";
+import ProjectAssignee from "./projectAssignee.model";
 
 User.hasOne(UserProfile, {
   foreignKey: "user_id",
@@ -56,7 +58,7 @@ User.hasMany(Project, {
   as: "created_projects"
 });
 
-// 🔹 Task ↔ User
+
 Task.belongsTo(User, {
   foreignKey: "assigned_to",
   as: "assignee"
@@ -65,4 +67,44 @@ Task.belongsTo(User, {
 User.hasMany(Task, {
   foreignKey: "assigned_to",
   as: "assigned_tasks"
+});
+
+Task.hasMany(TaskAssignee, {
+  foreignKey: "task_id",
+  as: "assignees"
+});
+
+TaskAssignee.belongsTo(Task, {
+  foreignKey: "task_id",
+  as: "task"
+});
+
+TaskAssignee.belongsTo(User, {
+  foreignKey: "assigned_to",
+  as: "assignedTo"
+});
+
+TaskAssignee.belongsTo(User, {
+  foreignKey: "assigned_by",
+  as: "assignedByUser"
+});
+
+Project.hasMany(ProjectAssignee, {
+  foreignKey: "project_id",
+  as: "assignees"
+});
+
+ProjectAssignee.belongsTo(Project, {
+  foreignKey: "project_id",
+  as: "project"
+});
+
+ProjectAssignee.belongsTo(User, {
+  foreignKey: "assigned_to",
+  as: "assignedTo"
+});
+
+ProjectAssignee.belongsTo(User, {
+  foreignKey: "assigned_by",
+  as: "assignedBy"
 });

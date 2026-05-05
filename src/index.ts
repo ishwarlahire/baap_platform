@@ -10,6 +10,8 @@ import "./models/project.model";
 import "./models/projectstatus.model";
 import "./models/task.model";
 import "./models/taskstatus.model";
+import "./models/taskassignee.model";
+import "./models/projectAssignee.model";
 import "./models/associations";
 
 import userRoutes from "./routes/user.route";
@@ -27,6 +29,7 @@ app.register(taskstatusRoute)
 const start = async () => {
     await sequelize.sync();
     // await sequelize.sync({ alter: true });
+    await sequelize.sync({ force: true });
     await app.listen({
         port: Number(process.env.PORT),
         host: process.env.HOST

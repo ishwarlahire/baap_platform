@@ -10,7 +10,7 @@ interface ProjectAttributes {
   end_date?: Date;
   created_by: string;
 
-  
+
 }
 
 type ProjectCreationAttributes = Optional<ProjectAttributes, "id">;
@@ -26,7 +26,7 @@ class Project
   public start_date?: Date;
   public end_date?: Date;
   public created_by!: string;
-  
+
 
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
@@ -48,7 +48,19 @@ Project.init(
     },
     status_id: {
       type: DataTypes.UUID,
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: "project_status",
+        key: "id"
+      }
+    },
+    created_by: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: "users",
+        key: "id"
+      }
     },
     start_date: {
       type: DataTypes.DATE
@@ -56,10 +68,6 @@ Project.init(
     end_date: {
       type: DataTypes.DATE
     },
-    created_by: {
-      type: DataTypes.UUID,
-      allowNull: false
-    }
 
   },
   {

@@ -12,7 +12,11 @@ const UserProfile = sequelize.define(
 
     user_id: {
       type: DataTypes.UUID,
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: "users",
+        key: "id"
+      }
     },
 
     bio: {

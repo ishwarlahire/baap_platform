@@ -1,13 +1,11 @@
 import sequelize from "../config/db";
-import { DataTypes, Model, Optional } from "sequelize";
+import { DataTypes, Model, Optional, Sequelize } from "sequelize";
 
 interface TaskStatusAttributes {
   id: string;
   name: string;
   description?: string;
-  is_default?: boolean;
-  task_id?:string | null;
-  level?:number;
+  sequence?:number;
 }
 
 type TaskStatusCreationAttributes = Optional<TaskStatusAttributes, "id">;
@@ -20,9 +18,7 @@ class TaskStatus
   public id!: string;
   public name!: string;
   public description?: string;
-  public is_default?: boolean;
-  public task_id?: string|null;
-  public level?: number;
+  public sequence?: number;
 }
 
 
@@ -41,18 +37,9 @@ TaskStatus.init(
     description: {
       type: DataTypes.TEXT
     },
-    is_default: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false
-    },
-    task_id: {
-  type: DataTypes.UUID,
-  allowNull: true
-},
-
-level: {
+sequence: {
   type: DataTypes.INTEGER,
-  defaultValue: 1
+  allowNull:false
 }
   },
   {

@@ -42,7 +42,34 @@ Task.init(
     },
     project_id: {
       type: DataTypes.UUID,
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: "projects",
+        key: "id"
+      }
+    },
+    status_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: "task_status",
+        key: "id"
+      }
+    },
+    assigned_to: {
+      type: DataTypes.UUID,
+      references: {
+        model: "users",
+        key: "id"
+      }
+    },
+    created_by: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: "users",
+        key: "id"
+      }
     },
     title: {
       type: DataTypes.STRING,
@@ -51,23 +78,12 @@ Task.init(
     description: {
       type: DataTypes.TEXT
     },
-    status_id: {
-      type: DataTypes.UUID,
-      allowNull: false
-    },
     priority: {
       type: DataTypes.STRING,
       defaultValue: "medium"
     },
-    assigned_to: {
-      type: DataTypes.UUID
-    },
     due_date: {
       type: DataTypes.DATE
-    },
-    created_by: {
-      type: DataTypes.UUID,
-      allowNull: false
     }
   },
   {

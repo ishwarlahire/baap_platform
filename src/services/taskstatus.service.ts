@@ -1,45 +1,45 @@
 import TaskStatus from "../models/taskstatus.model";
-
+import sequelize from "../config/db";
 import { Op } from "sequelize";
 
 export const createTaskStatus = async (data: any) => {
+  const t = await sequelize.transaction();
+
+  try {
     if (!data.name) {
-        throw new Error("Status name is required");
+      throw new Error("Status name is required");
     }
-    if (!data.task_id) {
-        data.level = 1;
-        data.is_default = true;
-
-        const exists = await TaskStatus.findOne({
-            where: {
-                name: data.name,
-                task_id: {
-                    [Op.is]: null
-                }
-            }
-        });
-
-        if (exists) {
-            throw new Error("Default status already exists");
-        }
+    const nameExists = await TaskStatus.findOne({
+      where: {
+        name: data.name
+      },
+      transaction: t
+    });
+    if (nameExists) {
+      throw new Error("Status name already exists");
     }
-    if (data.task_id) {
-        data.level = data.level || 2;
-        data.is_default = false;
+    const maxSequence = await TaskStatus.max("sequence", { transaction: t });
+    const nextSequence = maxSequence ? Number(maxSequence) + 1 : 1;
+    const sequenceExists = await TaskStatus.findOne({
+      where: {
+        sequence: nextSequence
+      },
+      transaction: t
+    });
 
-        const exists = await TaskStatus.findOne({
-            where: {
-                name: data.name,
-                task_id: data.task_id
-            }
-        });
-
-        if (exists) {
-            throw new Error("Status already exists for this task");
-        }
+    if (sequenceExists) {
+      throw new Error("Sequence conflict, try again");
     }
+    data.sequence = nextSequence;
+    const result = await TaskStatus.create(data, { transaction: t });
 
-    return await TaskStatus.create(data);
+    await t.commit();
+    return result;
+
+  } catch (error) {
+    await t.rollback();
+    throw error;
+  }
 };
 
 export const getAllTaskStatus = async () => {

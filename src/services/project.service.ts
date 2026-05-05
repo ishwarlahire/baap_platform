@@ -1,9 +1,58 @@
 import Project from "../models/project.model";
 import ProjectStatus from "../models/projectstatus.model";
 import Task from "../models/task.model";
+import ProjectAssignee from "../models/projectAssignee.model";
+import sequelize from "../config/db";
+
+// services/project.service.ts
 
 export const createProject = async (data: any) => {
-  return await Project.create(data);
+  const t = await sequelize.transaction();
+
+  try {
+    if (!data.name) throw new Error("Project name is required");
+    if (!data.created_by) throw new Error("created_by is required");
+
+    let statusId = data.status_id;
+    if (!statusId) {
+      const defaultStatus = await ProjectStatus.findOne({
+        where: { is_default: true }
+      });
+      if (!defaultStatus) throw new Error("Default project status not found");
+      statusId = defaultStatus.getDataValue("id");
+    }
+    const { assigned_to, ...projectData } = data;
+    const project = await Project.create(
+      {
+        ...projectData,
+        status_id: statusId
+      },
+      { transaction: t }
+    );
+
+    if (assigned_to) {
+      if (!Array.isArray(assigned_to)) {
+        throw new Error("assigned_to must be an array");
+      }
+
+      const assigneeRows = assigned_to.map((userId: string) => ({
+        project_id: project.getDataValue("id"),
+        assigned_to: userId,
+        assigned_by: data.created_by,
+        created_by: data.created_by,
+        updated_by: data.created_by
+      }));
+
+      await ProjectAssignee.bulkCreate(assigneeRows, { transaction: t });
+    }
+
+    await t.commit();
+    return project;
+
+  } catch (error) {
+    await t.rollback();
+    throw error;
+  }
 };
 
 export const getProjects = async () => {
