@@ -14,6 +14,7 @@ import "./models/taskassignee.model";
 import "./models/projectAssignee.model";
 import "./models/projectType.model";
 import "./models/projectrating.model";
+import "./models/taskRating.model";
 import "./models/associations";
 
 
@@ -24,6 +25,7 @@ import taskstatusRoute from "./routes/taskstatus.route";
 import taskRoutes from "./routes/task.route";
 import projectTypeRoutes from "./routes/projectType.route";
 import projectRatingRoutes from "./routes/projectRating.routes";
+import taskRatingRoutes from "./routes/taskRating.route";
 
 
 
@@ -34,6 +36,8 @@ app.register(taskRoutes);
 app.register(taskstatusRoute);
 app.register(projectTypeRoutes);
 app.register(projectRatingRoutes);
+app.register(taskRatingRoutes);
+
 const start = async () => {
     await sequelize.sync();
     // await sequelize.sync({ alter: true });
