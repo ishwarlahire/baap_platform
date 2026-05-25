@@ -56,10 +56,24 @@ export const getTaskStatusById = async (id: string) => {
 };
 
 export const updateTaskStatus = async (id: string, data: any) => {
+  try {
+    if (data.name) {
+      const existing = await TaskStatus.findOne({
+        where: {
+          name: data.name
+        }
+      });
+      if (existing && existing.id !== id) {
+        throw new Error("Task status name already exists");
+      }
+    }
     await TaskStatus.update(data, { where: { id } });
-
     return { message: "Task status updated successfully" };
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
 };
+
 
 export const deleteTaskStatus = async (id: string) => {
     await TaskStatus.destroy({ where: { id } });

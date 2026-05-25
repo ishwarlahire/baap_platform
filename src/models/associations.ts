@@ -6,6 +6,7 @@ import User from "./user.model";
 import UserProfile from "./userProfile.model";
 import TaskAssignee from "./taskassignee.model";
 import ProjectAssignee from "./projectAssignee.model";
+import ProjectType from "./projectType.model";
 
 User.hasOne(UserProfile, {
   foreignKey: "user_id",
@@ -107,4 +108,14 @@ ProjectAssignee.belongsTo(User, {
 ProjectAssignee.belongsTo(User, {
   foreignKey: "assigned_by",
   as: "assignedBy"
+});
+
+Project.belongsTo(ProjectType, {
+  foreignKey: "project_type_id",
+  as: "type"
+});
+
+ProjectType.hasMany(Project, {
+  foreignKey: "project_type_id",
+  as: "projects"
 });

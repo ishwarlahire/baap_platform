@@ -5,32 +5,58 @@ import TaskAssignee from "../models/taskassignee.model";
 import sequelize from "../config/db";
 
 export const createTask = async (data: any) => {
-    const t = await sequelize.transaction();
+  const t = await sequelize.transaction();
 
-    try {
-        const task = await Task.create(data, { transaction: t });
-        if (data.assigned_to) {
-            await TaskAssignee.create(
-                {
-                    task_id: task.getDataValue("id"),
-                    assigned_to: data.assigned_to,
-                    assigned_by: data.created_by,
-                    created_by: data.created_by,
-                    updated_by: data.created_by
-                },
-                { transaction: t }
-            );
-        }
-
-        await t.commit();
-        return task;
-
-    } catch (error) {
-        await t.rollback();
-        throw error;
+  try {
+    let statusId = data.status_id;
+    if (!statusId) {
+      const defaultStatus = await TaskStatus.findOne({
+        where: { sequence: 1 },
+        transaction: t
+      });
+      if (!defaultStatus) {
+        throw new Error("Default status (sequence = 1) not found");
+      }
+      statusId = defaultStatus.id;
     }
-};
+    const task = await Task.create(
+      {
+        ...data,
+        assigned_to: null,
+        status_id: statusId
+      },
+      { transaction: t }
+    );
+    let assignees: string[] = [];
 
+    if (Array.isArray(data.assigned_to)) {
+      assignees = data.assigned_to;
+    } else if (data.assigned_to) {
+      assignees = [data.assigned_to];
+    } else {
+      assignees = [data.created_by];
+    }
+    for (const userId of assignees) {
+      await TaskAssignee.create(
+        {
+          task_id: task.id,
+          assigned_to: userId,
+          assigned_by: data.created_by,
+          created_by: data.created_by,
+          updated_by: data.created_by
+        },
+        { transaction: t }
+      );
+    }
+
+    await t.commit();
+    return task;
+
+  } catch (error) {
+    await t.rollback();
+    throw error;
+  }
+};
 
 export const getTasks = async () => {
     return await Task.findAll({

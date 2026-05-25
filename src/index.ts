@@ -12,24 +12,32 @@ import "./models/task.model";
 import "./models/taskstatus.model";
 import "./models/taskassignee.model";
 import "./models/projectAssignee.model";
+import "./models/projectType.model";
+import "./models/projectrating.model";
 import "./models/associations";
+
 
 import userRoutes from "./routes/user.route";
 import projectRoutes from "./routes/project.route";
 import projectStatus from "./routes/projectstatus.route";
 import taskstatusRoute from "./routes/taskstatus.route";
 import taskRoutes from "./routes/task.route";
+import projectTypeRoutes from "./routes/projectType.route";
+import projectRatingRoutes from "./routes/projectRating.routes";
+
 
 
 app.register(userRoutes);
 app.register(projectRoutes);
 app.register(projectStatus);
 app.register(taskRoutes);
-app.register(taskstatusRoute)
+app.register(taskstatusRoute);
+app.register(projectTypeRoutes);
+app.register(projectRatingRoutes);
 const start = async () => {
     await sequelize.sync();
     // await sequelize.sync({ alter: true });
-    await sequelize.sync({ force: true });
+    // await sequelize.sync({ force: true });
     await app.listen({
         port: Number(process.env.PORT),
         host: process.env.HOST

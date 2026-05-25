@@ -39,7 +39,7 @@ TaskStatus.init(
     },
 sequence: {
   type: DataTypes.INTEGER,
-  allowNull:false
+  allowNull:false,
 }
   },
   {

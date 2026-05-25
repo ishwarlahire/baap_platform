@@ -9,6 +9,7 @@ interface ProjectAttributes {
   start_date?: Date;
   end_date?: Date;
   created_by: string;
+  project_type_id?:string;
 
 
 }
@@ -26,6 +27,7 @@ class Project
   public start_date?: Date;
   public end_date?: Date;
   public created_by!: string;
+  public project_type_id?:string;
 
 
   public readonly created_at!: Date;
@@ -68,6 +70,14 @@ Project.init(
     end_date: {
       type: DataTypes.DATE
     },
+    project_type_id: {
+  type: DataTypes.UUID,
+  allowNull: true,
+  references: {
+    model: "project_types",
+    key: "id"
+  }
+}
 
   },
   {
