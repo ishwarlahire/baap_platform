@@ -7,6 +7,7 @@ import UserProfile from "./userProfile.model";
 import TaskAssignee from "./taskassignee.model";
 import ProjectAssignee from "./projectAssignee.model";
 import ProjectType from "./projectType.model";
+import TaskWatcher from "./taskWatcher.model";
 
 User.hasOne(UserProfile, {
   foreignKey: "user_id",
@@ -118,4 +119,19 @@ Project.belongsTo(ProjectType, {
 ProjectType.hasMany(Project, {
   foreignKey: "project_type_id",
   as: "projects"
+});
+
+Task.hasMany(TaskWatcher, {
+  as: "watchers",
+  foreignKey: "task_id",
+});
+
+TaskWatcher.belongsTo(Task, {
+  as: "task",
+  foreignKey: "task_id",
+});
+
+TaskWatcher.belongsTo(User, {
+  as: "watcher",
+  foreignKey: "watcher_id",
 });

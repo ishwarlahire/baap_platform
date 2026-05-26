@@ -13,7 +13,8 @@ import "./models/taskstatus.model";
 import "./models/taskassignee.model";
 import "./models/projectAssignee.model";
 import "./models/projectType.model";
-import "./models/projectrating.model";
+import "./models/projectRating.model";
+import "./models/taskWatcher.model";
 import "./models/taskRating.model";
 import "./models/associations";
 

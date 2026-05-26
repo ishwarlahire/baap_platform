@@ -1,5 +1,5 @@
 import { Op } from "sequelize";
-import ProjectRating from "../models/projectrating.model";
+import ProjectRating from "../models/projectRating.model";
 
 interface CreateProjectRatingDTO {
     project_id: string;
