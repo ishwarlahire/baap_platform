@@ -94,9 +94,19 @@ export const createTask = async (data: any) => {
     throw error;
   }
 };
+const formatTaskResponse = (task: any) => {
+  const json = task.toJSON();
+
+  return {
+    ...json,
+    watchers: (json.watchers || []).map((item: any) => ({
+      watcher: item.watcher,
+    })),
+  };
+};
 
 export const getTasks = async () => {
-  return await Task.findAll({
+  const tasks = await Task.findAll({
     include: [
       { model: TaskStatus, as: "status" },
       { model: Project, as: "project" },
@@ -112,6 +122,8 @@ export const getTasks = async () => {
       },
     ],
   });
+
+  return tasks.map((task) => formatTaskResponse(task));
 };
 
 export const getTaskById = async (id: string) => {
@@ -137,7 +149,7 @@ export const getTaskById = async (id: string) => {
     throw new Error("Task not found");
   }
 
-  return task;
+  return formatTaskResponse(task);
 };
 
 export const updateTask = async (id: string, data: any) => {
