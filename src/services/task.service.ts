@@ -4,6 +4,7 @@ import Project from "../models/project.model";
 import TaskAssignee from "../models/taskassignee.model";
 import TaskWatcher from "../models/taskWatcher.model";
 import User from "../models/user.model";
+import TaskMedia from "../models/taskmedia.model";
 import sequelize from "../config/db";
 
 
@@ -26,7 +27,7 @@ export const createTask = async (data: any) => {
       statusId = defaultStatus.id;
     }
 
-    const { watcher_ids, task_watchers, client_id, ...taskData } = data;
+    const { watcher_ids, task_watchers, media, client_id, ...taskData } = data;
 
     const task = await Task.create(
       {
@@ -60,19 +61,7 @@ export const createTask = async (data: any) => {
       );
     }
 
-    const watchers: string[] = [];
-
-    if (Array.isArray(watcher_ids)) {
-      watchers.push(...watcher_ids);
-    } else if (Array.isArray(task_watchers)) {
-      for (const item of task_watchers) {
-        if (typeof item === "string") {
-          watchers.push(item);
-        } else if (item?.watcher_id) {
-          watchers.push(item.watcher_id);
-        }
-      }
-    }
+    const watchers: string[] = Array.isArray(watcher_ids) ? watcher_ids : [];
 
     for (const watcherId of watchers) {
       await TaskWatcher.create(
@@ -87,6 +76,21 @@ export const createTask = async (data: any) => {
       );
     }
 
+    if (Array.isArray(media) && media.length > 0) {
+      for (const item of media) {
+        await TaskMedia.create(
+          {
+            task_id: task.id,
+            project_id: undefined,
+            media_owner_type: "task",
+            media_url: item.media_url,
+            media_type: item.media_type,
+          },
+          { transaction: t }
+        );
+      }
+    }
+
     await t.commit();
     return task;
   } catch (error) {
@@ -94,14 +98,18 @@ export const createTask = async (data: any) => {
     throw error;
   }
 };
+
 const formatTaskResponse = (task: any) => {
   const json = task.toJSON();
 
   return {
     ...json,
+
     watchers: (json.watchers || []).map((item: any) => ({
       watcher: item.watcher,
     })),
+
+    media: json.media || [],
   };
 };
 
@@ -109,7 +117,9 @@ export const getTasks = async () => {
   const tasks = await Task.findAll({
     include: [
       { model: TaskStatus, as: "status" },
+
       { model: Project, as: "project" },
+
       {
         model: TaskWatcher,
         as: "watchers",
@@ -120,27 +130,56 @@ export const getTasks = async () => {
           },
         ],
       },
+
+      {
+        model: TaskMedia,
+        as: "media",
+      },
+      
     ],
   });
 
   return tasks.map((task) => formatTaskResponse(task));
 };
 
+// const formatTaskResponse = (task: any) => {
+//   const json = task.toJSON();
+
+//   return {
+//     ...json,
+
+//     watchers: (json.watchers || []).map((item: any) => ({
+//       watcher: item.watcher,
+//     })),
+
+//     media: json.media || [],
+//   };
+// };
+
 export const getTaskById = async (id: string) => {
   const task = await Task.findOne({
     where: { id },
+
     include: [
       { model: TaskStatus, as: "status" },
+
       { model: Project, as: "project" },
+
       {
         model: TaskWatcher,
         as: "watchers",
+
         include: [
           {
             model: User,
             as: "watcher",
           },
         ],
+      },
+
+      {
+        model: TaskMedia,
+        as: "media",
       },
     ],
   });
@@ -153,13 +192,13 @@ export const getTaskById = async (id: string) => {
 };
 
 export const updateTask = async (id: string, data: any) => {
-    await Task.update(data, { where: { id } });
+  await Task.update(data, { where: { id } });
 
-    return { message: "Task updated successfully" };
+  return { message: "Task updated successfully" };
 };
 
 export const deleteTask = async (id: string) => {
-    await Task.destroy({ where: { id } });
+  await Task.destroy({ where: { id } });
 
-    return { message: "Task deleted successfully" };
+  return { message: "Task deleted successfully" };
 };
