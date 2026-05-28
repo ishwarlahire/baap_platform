@@ -3,6 +3,7 @@ import * as controller from "../controllers/task.controller";
 
 export default async function (app: FastifyInstance) {
   app.post("/createTask", controller.createTask);
+  app.post("/uploadTaskMedia/:id", controller.uploadTaskMedia);
   app.get("/getAllTask", controller.getTasks);
   app.get("/getTaskById/:id", controller.getTaskById);
   app.put("/updateTask/:id", controller.updateTask);

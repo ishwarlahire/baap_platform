@@ -1,3 +1,7 @@
+import fs from "fs/promises";
+import path from "path";
+import crypto from "crypto";
+
 import Task from "../models/task.model";
 import TaskStatus from "../models/taskstatus.model";
 import Project from "../models/project.model";
@@ -6,7 +10,6 @@ import TaskWatcher from "../models/taskWatcher.model";
 import User from "../models/user.model";
 import TaskMedia from "../models/taskmedia.model";
 import sequelize from "../config/db";
-
 
 export const createTask = async (data: any) => {
   const t = await sequelize.transaction();
@@ -27,7 +30,7 @@ export const createTask = async (data: any) => {
       statusId = defaultStatus.id;
     }
 
-    const { watcher_ids, task_watchers, media, client_id, ...taskData } = data;
+    const { watcher_ids, task_watchers, client_id, ...taskData } = data;
 
     const task = await Task.create(
       {
@@ -76,21 +79,6 @@ export const createTask = async (data: any) => {
       );
     }
 
-    if (Array.isArray(media) && media.length > 0) {
-      for (const item of media) {
-        await TaskMedia.create(
-          {
-            task_id: task.id,
-            project_id: undefined,
-            media_owner_type: "task",
-            media_url: item.media_url,
-            media_type: item.media_type,
-          },
-          { transaction: t }
-        );
-      }
-    }
-
     await t.commit();
     return task;
   } catch (error) {
@@ -104,11 +92,9 @@ const formatTaskResponse = (task: any) => {
 
   return {
     ...json,
-
     watchers: (json.watchers || []).map((item: any) => ({
       watcher: item.watcher,
     })),
-
     media: json.media || [],
   };
 };
@@ -117,9 +103,7 @@ export const getTasks = async () => {
   const tasks = await Task.findAll({
     include: [
       { model: TaskStatus, as: "status" },
-
       { model: Project, as: "project" },
-
       {
         model: TaskWatcher,
         as: "watchers",
@@ -130,45 +114,25 @@ export const getTasks = async () => {
           },
         ],
       },
-
       {
         model: TaskMedia,
         as: "media",
       },
-      
     ],
   });
 
   return tasks.map((task) => formatTaskResponse(task));
 };
 
-// const formatTaskResponse = (task: any) => {
-//   const json = task.toJSON();
-
-//   return {
-//     ...json,
-
-//     watchers: (json.watchers || []).map((item: any) => ({
-//       watcher: item.watcher,
-//     })),
-
-//     media: json.media || [],
-//   };
-// };
-
 export const getTaskById = async (id: string) => {
   const task = await Task.findOne({
     where: { id },
-
     include: [
       { model: TaskStatus, as: "status" },
-
       { model: Project, as: "project" },
-
       {
         model: TaskWatcher,
         as: "watchers",
-
         include: [
           {
             model: User,
@@ -176,7 +140,6 @@ export const getTaskById = async (id: string) => {
           },
         ],
       },
-
       {
         model: TaskMedia,
         as: "media",
@@ -201,4 +164,102 @@ export const deleteTask = async (id: string) => {
   await Task.destroy({ where: { id } });
 
   return { message: "Task deleted successfully" };
+};
+
+export const uploadTaskMedia = async (
+  taskId: string,
+  files: any[],
+  createdBy: string
+) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const task = await Task.findOne({
+      where: { id: taskId },
+      transaction: t,
+    });
+
+    if (!task) {
+      throw new Error("Task not found");
+    }
+
+    if (!createdBy) {
+      throw new Error("created_by is required");
+    }
+
+    if (!Array.isArray(files) || files.length === 0) {
+      throw new Error("No files uploaded");
+    }
+
+    const uploadDir = path.join(process.cwd(), "uploads", "task-media", taskId);
+    await fs.mkdir(uploadDir, { recursive: true });
+
+    const getMediaType = (
+      file: any
+    ): "image" | "video" | "document" | "excel" => {
+      const mime = (file.mimetype || "").toLowerCase();
+      const ext = path.extname(file.filename || "").toLowerCase();
+
+      if (mime.startsWith("image/")) return "image";
+      if (mime.startsWith("video/")) return "video";
+
+      if (
+        mime === "application/pdf" ||
+        mime === "application/octet-stream" ||
+        ext === ".pdf" ||
+        ext === ".doc" ||
+        ext === ".docx"
+      ) {
+        return "document";
+      }
+
+      if (
+        mime === "application/vnd.ms-excel" ||
+        mime === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+        ext === ".xls" ||
+        ext === ".xlsx" ||
+        ext === ".csv"
+      ) {
+        return "excel";
+      }
+
+      throw new Error(`Unsupported media type: ${file.mimetype}`);
+    };
+
+    const uploaded: any[] = [];
+
+    for (const file of files) {
+      const fileExt = path.extname(file.filename || "");
+      const fileName = `${Date.now()}-${crypto.randomUUID()}${fileExt}`;
+      const filePath = path.join(uploadDir, fileName);
+
+      await fs.writeFile(filePath, file.buffer);
+
+      const mediaUrl = `/uploads/task-media/${taskId}/${fileName}`;
+      const mediaType = getMediaType(file);
+
+      const media = await TaskMedia.create(
+        {
+          task_id: task.id,
+          project_id: task.project_id || undefined,
+          media_owner_type: "task",
+          media_url: mediaUrl,
+          media_type: mediaType,
+        },
+        { transaction: t }
+      );
+
+      uploaded.push(media);
+    }
+
+    await t.commit();
+
+    return {
+      message: "Task media uploaded successfully",
+      data: uploaded,
+    };
+  } catch (error) {
+    await t.rollback();
+    throw error;
+  }
 };
