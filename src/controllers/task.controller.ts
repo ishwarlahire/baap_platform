@@ -65,15 +65,27 @@ export const uploadTaskMedia = async (req: FastifyRequest, reply: FastifyReply) 
   }
 };
 
-
 export const getTasks = async (req: FastifyRequest, reply: FastifyReply) => {
-  const result = await service.getTasks();
+  try {
+    const { filter = "all-task", userId } = req.query as {
+      filter?: string;
+      userId?: string;
+    };
 
-  return reply.send({
-    success: true,
-    data: result,
-  });
+    const result = await service.getTasks(filter, userId);
+
+    return reply.send({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    return reply.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
 };
+
 
 export const getTaskById = async (req: FastifyRequest, reply: FastifyReply) => {
   try {

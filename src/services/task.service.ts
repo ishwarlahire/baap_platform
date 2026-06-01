@@ -10,6 +10,7 @@ import TaskWatcher from "../models/taskWatcher.model";
 import User from "../models/user.model";
 import TaskMedia from "../models/taskmedia.model";
 import sequelize from "../config/db";
+import { DataTypes, Model, Optional, Op } from "sequelize";
 
 export const createTask = async (data: any) => {
   const t = await sequelize.transaction();
@@ -99,30 +100,92 @@ const formatTaskResponse = (task: any) => {
   };
 };
 
-export const getTasks = async () => {
+
+
+
+const include = [
+  { model: TaskStatus, as: "status" },
+  { model: Project, as: "project" },
+  {
+    model: TaskWatcher,
+    as: "watchers",
+    include: [{ model: User, as: "watcher" }],
+  },
+  {
+    model: TaskMedia,
+    as: "media",
+  },
+];
+
+export const getTasks = async (
+  filter: string = "all-task",
+  userId?: string
+) => {
+  if (filter === "all-task" || !filter) {
+    const tasks = await Task.findAll({ include });
+    return tasks.map((task) => formatTaskResponse(task));
+  }
+
+  if (!userId) {
+    throw new Error("User id is required for this filter");
+  }
+
+  let taskIds: string[] = [];
+
+  if (filter === "assigned-to") {
+    const rows = await TaskAssignee.findAll({
+      where: { assigned_to: userId },
+      attributes: ["task_id"],
+      raw: true,
+    });
+
+    taskIds = rows.map((row: any) => row.task_id);
+  } else if (filter === "assigned-by") {
+    const rows = await TaskAssignee.findAll({
+      where: { assigned_by: userId },
+      attributes: ["task_id"],
+      raw: true,
+    });
+
+    taskIds = rows.map((row: any) => row.task_id);
+  } else if (filter === "my-task") {
+    const assignedToRows = await TaskAssignee.findAll({
+      where: { assigned_to: userId },
+      attributes: ["task_id"],
+      raw: true,
+    });
+
+    const assignedByRows = await TaskAssignee.findAll({
+      where: { assigned_by: userId },
+      attributes: ["task_id"],
+      raw: true,
+    });
+
+    const assignedToIds = assignedToRows.map((row: any) => row.task_id);
+    const assignedByIds = assignedByRows.map((row: any) => row.task_id);
+
+    taskIds = [...new Set([...assignedToIds, ...assignedByIds])];
+  } else {
+    throw new Error("Invalid filter type");
+  }
+
+  if (taskIds.length === 0) {
+    return [];
+  }
+
   const tasks = await Task.findAll({
-    include: [
-      { model: TaskStatus, as: "status" },
-      { model: Project, as: "project" },
-      {
-        model: TaskWatcher,
-        as: "watchers",
-        include: [
-          {
-            model: User,
-            as: "watcher",
-          },
-        ],
+    where: {
+      id: {
+        [Op.in]: taskIds,
       },
-      {
-        model: TaskMedia,
-        as: "media",
-      },
-    ],
+    },
+    include,
   });
 
   return tasks.map((task) => formatTaskResponse(task));
 };
+
+
 
 export const getTaskById = async (id: string) => {
   const task = await Task.findOne({
