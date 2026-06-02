@@ -67,7 +67,7 @@ export const uploadTaskMedia = async (req: FastifyRequest, reply: FastifyReply) 
 
 export const getTasks = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
-    const { filter = "all-task", userId } = req.query as {
+    const { filter = "all-task", userId } = req.body as {
       filter?: string;
       userId?: string;
     };
