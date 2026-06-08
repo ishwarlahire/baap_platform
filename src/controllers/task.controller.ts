@@ -67,12 +67,13 @@ export const uploadTaskMedia = async (req: FastifyRequest, reply: FastifyReply) 
 
 export const getTasks = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
-    const { filter = "all-task", userId } = req.body as {
-      filter?: string;
-      userId?: string;
+    const filters = req.body as {
+      assigned_to?: string;
+      assigned_by?: string;
+      user_id?: string;
     };
 
-    const result = await service.getTasks(filter, userId);
+    const result = await service.getTasks(filters);
 
     return reply.send({
       success: true,

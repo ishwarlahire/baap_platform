@@ -30,6 +30,7 @@ import "./models/projectRating.model";
 import "./models/taskWatcher.model";
 import "./models/taskRating.model";
 import "./models/taskmedia.model";
+import "./models/taskCounter.model"
 import "./models/associations";
 
 import userRoutes from "./routes/user.route";
@@ -40,6 +41,7 @@ import taskRoutes from "./routes/task.route";
 import projectTypeRoutes from "./routes/projectType.route";
 import projectRatingRoutes from "./routes/projectRating.routes";
 import taskRatingRoutes from "./routes/taskRating.route";
+import taskCounterRoute from "./routes/taskCounter.route";
 
 app.register(userRoutes);
 app.register(projectRoutes);
@@ -49,6 +51,7 @@ app.register(taskstatusRoute);
 app.register(projectTypeRoutes);
 app.register(projectRatingRoutes);
 app.register(taskRatingRoutes);
+app.register(taskCounterRoute);
 
 const start = async () => {
   try {

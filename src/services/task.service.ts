@@ -117,46 +117,50 @@ const include = [
   },
 ];
 
-export const getTasks = async (
-  filter: string = "all-task",
-  userId?: string
-) => {
-  if (filter === "all-task" || !filter) {
+
+export const getTasks = async (filters: {
+  assigned_to?: string;
+  assigned_by?: string;
+  user_id?: string;
+}) => {
+
+  if (!filters || Object.keys(filters).length === 0) {
     const tasks = await Task.findAll({ include });
     return tasks.map((task) => formatTaskResponse(task));
   }
 
-  if (!userId) {
-    throw new Error("User id is required for this filter");
-  }
-
   let taskIds: string[] = [];
 
-  if (filter === "assigned-to") {
+  if (filters.assigned_to) {
     const rows = await TaskAssignee.findAll({
-      where: { assigned_to: userId },
+      where: { assigned_to: filters.assigned_to },
       attributes: ["task_id"],
       raw: true,
     });
 
     taskIds = rows.map((row: any) => row.task_id);
-  } else if (filter === "assigned-by") {
+  }
+
+  
+  else if (filters.assigned_by) {
     const rows = await TaskAssignee.findAll({
-      where: { assigned_by: userId },
+      where: { assigned_by: filters.assigned_by },
       attributes: ["task_id"],
       raw: true,
     });
 
     taskIds = rows.map((row: any) => row.task_id);
-  } else if (filter === "my-task") {
+  }
+
+  else if (filters.user_id) {
     const assignedToRows = await TaskAssignee.findAll({
-      where: { assigned_to: userId },
+      where: { assigned_to: filters.user_id },
       attributes: ["task_id"],
       raw: true,
     });
 
     const assignedByRows = await TaskAssignee.findAll({
-      where: { assigned_by: userId },
+      where: { assigned_by: filters.user_id },
       attributes: ["task_id"],
       raw: true,
     });
