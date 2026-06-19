@@ -9,6 +9,7 @@ import TaskAssignee from "../models/taskassignee.model";
 import TaskWatcher from "../models/taskWatcher.model";
 import User from "../models/user.model";
 import TaskMedia from "../models/taskmedia.model";
+import UserTaskCounter from "../models/taskCounter.model";
 import sequelize from "../config/db";
 import { DataTypes, Model, Optional, Op } from "sequelize";
 
@@ -33,15 +34,6 @@ export const createTask = async (data: any) => {
 
     const { watcher_ids, task_watchers, client_id, ...taskData } = data;
 
-    const task = await Task.create(
-      {
-        ...taskData,
-        assigned_to: null,
-        status_id: statusId,
-      },
-      { transaction: t }
-    );
-
     let assignees: string[] = [];
 
     if (Array.isArray(data.assigned_to)) {
@@ -51,6 +43,15 @@ export const createTask = async (data: any) => {
     } else {
       assignees = [data.created_by];
     }
+
+    const task = await Task.create(
+      {
+        ...taskData,
+        assigned_to: assignees[0], // first assignee save
+        status_id: statusId,
+      },
+      { transaction: t }
+    );
 
     for (const userId of assignees) {
       await TaskAssignee.create(
@@ -63,16 +64,37 @@ export const createTask = async (data: any) => {
         },
         { transaction: t }
       );
+
+      const existingCounter = await UserTaskCounter.findOne({
+        where: {
+          user_id: userId,
+          task_id: task.id,
+        },
+        transaction: t,
+      });
+
+      if (!existingCounter) {
+        await UserTaskCounter.create(
+          {
+            user_id: userId,
+            task_id: task.id,
+            is_viewed: false,
+          },
+          { transaction: t }
+        );
+      }
     }
 
-    const watchers: string[] = Array.isArray(watcher_ids) ? watcher_ids : [];
+    const watchers: string[] = Array.isArray(watcher_ids)
+      ? watcher_ids
+      : [];
 
     for (const watcherId of watchers) {
       await TaskWatcher.create(
         {
           task_id: task.id,
           watcher_id: watcherId,
-          client_id: data.client_id,
+          client_id: client_id,
           created_by: data.created_by,
           updated_by: data.created_by,
         },
@@ -81,6 +103,7 @@ export const createTask = async (data: any) => {
     }
 
     await t.commit();
+
     return task;
   } catch (error) {
     await t.rollback();
@@ -132,16 +155,18 @@ export const getTasks = async (filters: {
   let taskIds: string[] = [];
 
   if (filters.assigned_to) {
-    const rows = await TaskAssignee.findAll({
-      where: { assigned_to: filters.assigned_to },
-      attributes: ["task_id"],
-      raw: true,
-    });
+  const rows = await UserTaskCounter.findAll({
+    where: {
+      user_id: filters.assigned_to,
+    },
+    attributes: ["task_id"],
+    raw: true,
+  });
 
-    taskIds = rows.map((row: any) => row.task_id);
-  }
+  taskIds = rows.map((row: any) => row.task_id);
+}
 
-  
+
   else if (filters.assigned_by) {
     const rows = await TaskAssignee.findAll({
       where: { assigned_by: filters.assigned_by },
