@@ -9,6 +9,8 @@ import ProjectAssignee from "./projectAssignee.model";
 import ProjectType from "./projectType.model";
 import TaskWatcher from "./taskWatcher.model";
 import TaskMedia from "./taskmedia.model";
+import Student from "./student.model";
+import StudentMark from "./studentMark.model";
 
 User.hasOne(UserProfile, {
   foreignKey: "user_id",
@@ -154,4 +156,14 @@ Project.hasMany(TaskMedia, {
 TaskMedia.belongsTo(Project, {
   as: "project",
   foreignKey: "project_id",
+});
+
+Student.hasMany(StudentMark, {
+    foreignKey: "student_id",
+    as: "marks",
+});
+
+StudentMark.belongsTo(Student, {
+    foreignKey: "student_id",
+    as: "student",
 });

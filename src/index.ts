@@ -33,7 +33,10 @@ import "./models/taskmedia.model";
 import "./models/taskCounter.model";
 import "./models/designRecord.model";
 import "./models/designVersion.model";
+import "./models/student.model";
+import "./models/studentMark.model";
 import "./models/associations";
+
 
 
 import userRoutes from "./routes/user.route";
@@ -46,6 +49,7 @@ import projectRatingRoutes from "./routes/projectRating.routes";
 import taskRatingRoutes from "./routes/taskRating.route";
 import taskCounterRoute from "./routes/taskCounter.route";
 import designRecordRoute from "./routes/designRecord.route";
+import studentRoutes from "./routes/student.route";
 
 
 app.register(userRoutes);
@@ -57,7 +61,9 @@ app.register(projectTypeRoutes);
 app.register(projectRatingRoutes);
 app.register(taskRatingRoutes);
 app.register(taskCounterRoute);
-app.register(designRecordRoute)
+app.register(designRecordRoute);
+app.register(studentRoutes);
+
 
 const start = async () => {
   try {
