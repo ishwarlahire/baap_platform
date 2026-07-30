@@ -21,4 +21,10 @@ export default async function (app: FastifyInstance) {
 
   app.get("/getClassStatistics", controller.getClassStatistics);
 
+  app.put("/updateStudent/:id", controller.updateStudent);
+
+  app.get("/searchStudents", controller.searchStudents);
+
+  
+
 }

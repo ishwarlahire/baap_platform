@@ -28,7 +28,15 @@ export const getAllStudents = async (
   reply: FastifyReply
 ) => {
   try {
-    const result = await service.getAllStudents();
+    const { page, limit } = req.query as {
+      page?: string;
+      limit?: string;
+    };
+
+    const result = await service.getAllStudents(
+      page ? Number(page) : undefined,
+      limit ? Number(limit) : undefined
+    );
 
     return reply.send({
       success: true,
@@ -178,6 +186,51 @@ export const getClassStatistics = async (
 ) => {
   try {
     const result = await service.getClassStatistics();
+
+    return reply.send({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
+    return reply.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Update Student
+export const updateStudent = async (
+  req: FastifyRequest,
+  reply: FastifyReply
+) => {
+  try {
+    const { id } = req.params as { id: string };
+
+    const result = await service.updateStudent(id, req.body);
+
+    return reply.send({
+      success: true,
+      message: "Student updated successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    return reply.status(500).send({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Search Students
+export const searchStudents = async (
+  req: FastifyRequest,
+  reply: FastifyReply
+) => {
+  try {
+    const { search } = req.query as { search: string };
+
+    const result = await service.searchStudents(search);
 
     return reply.send({
       success: true,

@@ -1,6 +1,7 @@
 import Student from "../models/student.model";
 import StudentMark from "../models/studentMark.model";
 import sequelize from "../config/db";
+import { Op } from "sequelize";
 
 
 export const createStudent = async (data: any) => {
@@ -61,10 +62,33 @@ export const createStudent = async (data: any) => {
   }
 };
 
-export const getAllStudents = async () => {
-  return await Student.findAll({
+export const getAllStudents = async (
+  page?: number,
+  limit?: number
+) => {
+
+  // Old functionality
+  if (!page || !limit) {
+    return await Student.findAll({
+      order: [["roll_number", "ASC"]],
+    });
+  }
+
+  // Pagination
+  const offset = (page - 1) * limit;
+
+  const { rows, count } = await Student.findAndCountAll({
+    limit,
+    offset,
     order: [["roll_number", "ASC"]],
   });
+
+  return {
+    totalStudents: count,
+    currentPage: page,
+    totalPages: Math.ceil(count / limit),
+    students: rows,
+  };
 };
 
 export const getStudentById = async (id: string) => {
@@ -136,7 +160,7 @@ export const addStudentMarks = async (
       marks: item.marks,
     }));
 
-    await StudentMark.bulkCreate(marks, {
+    const savedMarks = await StudentMark.bulkCreate(marks, {
       transaction: t,
     });
 
@@ -144,7 +168,9 @@ export const addStudentMarks = async (
 
     return {
       message: "Student Marks Added Successfully",
+      data: savedMarks,
     };
+
   } catch (error) {
     await t.rollback();
     throw error;
@@ -416,4 +442,112 @@ export const getClassStatistics = async () => {
         )
       : 0,
   };
+};
+
+
+export const updateStudent = async (
+  id: string,
+  body: any
+) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const student = await Student.findByPk(id, {
+      transaction: t,
+    });
+
+    if (!student) {
+      throw new Error("Student not found");
+    }
+
+    const {
+      first_name,
+      last_name,
+      roll_number,
+      standard,
+      division,
+      dob,
+    } = body;
+
+    if (
+      !first_name ||
+      !last_name ||
+      !roll_number ||
+      !standard ||
+      !division ||
+      !dob
+    ) {
+      throw new Error("All fields are required");
+    }
+
+    const existingStudent = await Student.findOne({
+      where: {
+        roll_number,
+      },
+      transaction: t,
+    });
+
+    if (
+      existingStudent &&
+      existingStudent.id !== id
+    ) {
+      throw new Error("Roll Number already exists");
+    }
+
+    await student.update(
+      {
+        first_name,
+        last_name,
+        roll_number,
+        standard,
+        division,
+        dob,
+      },
+      {
+        transaction: t,
+      }
+    );
+
+    await t.commit();
+
+    return student;
+  } catch (error) {
+    await t.rollback();
+    throw error;
+  }
+};
+
+
+export const searchStudents = async (search: string) => {
+  if (!search) {
+    throw new Error("Search is required");
+  }
+
+  const conditions: any[] = [
+    {
+      first_name: {
+        [Op.like]: `%${search}%`,
+      },
+    },
+    {
+      last_name: {
+        [Op.like]: `%${search}%`,
+      },
+    },
+  ];
+
+  if (!isNaN(Number(search))) {
+    conditions.push({
+      roll_number: Number(search),
+    });
+  }
+
+  const students = await Student.findAll({
+    where: {
+      [Op.or]: conditions,
+    },
+    order: [["roll_number", "ASC"]],
+  });
+
+  return students;
 };
